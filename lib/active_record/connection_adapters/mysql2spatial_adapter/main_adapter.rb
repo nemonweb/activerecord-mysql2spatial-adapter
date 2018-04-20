@@ -78,6 +78,15 @@ module ActiveRecord
         end
 
 
+        # force geometry WKB to be generated little endian byte order since mysql seems to have a bug:
+        # http://postgis.refractions.net/pipermail/postgis-users/2003-June/002651.html
+        # The MySQL code contains an assumption in the WKB handling that all WBK
+        # will be little endian. If you run MySQL spatial on a big endian machine
+        # (Sparc, PowerPC, PA-RISC) you will find things go amiss when you try to
+        # send WKB to little endian machines (x86), because your big endian
+        # machine will be creating invalid data (big endian data incorrectly
+        # flagged as little endian).
+
         def quote(value_, column_=nil)
           if ::RGeo::Feature::Geometry.check_type(value_)
             "GeomFromWKB(0x#{::RGeo::WKRep::WKBGenerator.new(:hex_format => true, :little_endian => true).generate(value_)},#{value_.srid})"
